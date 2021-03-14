@@ -1,0 +1,157 @@
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="/.">
+        <img src="/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+        GetGeo
+    </a>
+</nav>
+<div class="container">
+    <div class="row">
+        <div id="flex" class="col-2">
+            <form action="http://localhost:3000/filteredMap/" onsubmit="return validateForm()">
+                <input type="hidden" id="mapId" name="mapId" value={{ mapId }}>
+
+                <div id="drawcheckboxes">
+                    <div id="checkboxes" class="flex-container">
+                        <li>
+                            <input type="checkbox" id="selectall">
+                            <label id="label">wszystko</label>
+                        </li>
+                        <span id="errorMessage"></span>
+                    </div>
+                    <p id="container"></p>
+                </div>
+                <div id="flex"><input type="submit" value="Rysuj" class="btn btn-primary"></div>
+            </form>
+            <p><button class="btn btn-primary" name="clear">Wyczyść dane</button></p>
+            <div id="frame">
+                <label>Dodaj warstwę:</label>
+                <input type="text" class="form-control" id="input1" value="oś ulicy">
+                <select id="ldropdown" name="locality" class="btn btn-primary dropdown-toggle"></select>
+                <button type="button" class="btn btn-primary" onclick="createCheckbox(ldropdown)">Dodaj warstwę</button>
+            </div>
+
+            <button id="btnCreatePoly" class="btn btn-primary"> Buduj poligon </button>
+            <button id="btnCreateHull" class="btn btn-primary"> Buduj otoczkę </button>
+            <br>
+            <button type="button" class="btn btn-primary" name="zapisz">Zapisz zaznaczenie</button>
+            <p></p>
+            <textarea id="currentpolygon"></textarea>
+
+
+        </div>
+        <div class="col-10">
+            <div id="map"></div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var myData = {{{ jsonData }}};
+    var myData1 = {{{ jsonData }}};
+    var mapId = {{{ mapId }}};
+
+    function validateForm() {
+        var isChecked = $("input:checkbox[name='layer']").is(':checked')
+        if (isChecked) {
+            $("#errorMessage").text("");
+            saveCheckboxesToLocalStorage();
+        }
+        else
+            $("#errorMessage").text("Zaznacz przynajmniej jeden checkbox");
+        return isChecked;
+    }
+
+    function saveCheckboxesToLocalStorage() {
+        var checkboxesValues = $("label[name=layerLabel]");
+        var checkboxesConfiguration = [];
+
+        $.each(checkboxesValues, function (i, v) {
+            checkboxesConfiguration.push({
+                name: v.firstChild.name,
+                class: v.firstChild.className,
+                id: v.firstChild.value,
+                value: v.textContent,
+                checked: v.firstChild.checked
+            });
+        });
+
+        console.log(JSON.stringify(checkboxesConfiguration));
+        localStorage.setItem("fdsettings", JSON.stringify(checkboxesConfiguration));
+    }
+
+    if (localStorage.getItem("fdsettings") == null) {
+        var JSONsettings = [
+            {
+                name: "layer",
+                class: "checkbox",
+                id: "K1_422KOJ",
+                value: "ulice",
+                checked: false,
+            },
+            {
+                name: "layer",
+                class: "checkbox",
+                id: "K1_423KOC",
+                value: "chodniki",
+                checked: false,
+            },
+            {
+                name: "layer",
+                class: "checkbox",
+                id: "K1_312BUD",
+                value: "budynki",
+                checked: false,
+            },
+            {
+                name: "layer",
+                class: "checkbox",
+                id: "K1_420KOU",
+                value: "krawędź jezdni",
+                checked: false,
+            },
+
+        ];
+
+        localStorage.setItem("fdsettings", JSON.stringify(JSONsettings));
+        var myjson = JSON.parse(localStorage.getItem("fdsettings"));
+    } else {
+        var myjson = JSON.parse(localStorage.getItem("fdsettings"));
+    }
+    if (myjson == null)
+        myjson = [];
+
+    $.each(myjson, function (i, v) {
+        var feedname = this.value;
+        $("#checkboxes").append(
+            $("<label>")
+                .text(this.value)
+                .attr({ name: "layerLabel" })
+                .prepend(
+                    $("<input>")
+                        .attr({
+                            type: "checkbox",
+                            class: "checkbox",
+                            name: "layer",
+                            "data-feed": feedname,
+                        })
+                        .val(this.id)
+                        .prop("checked", this.checked)
+                )
+        );
+    });
+
+    // GATHER JUST THE VALUE OF THOSE CHECKED - CAN BE USED IN DATA SEND VIA AJAX
+    var array_values = [];
+    $("input[type=checkbox]").each(function () {
+        if ($(this).is(":checked")) {
+            array_values.push($(this).val());
+        }
+    });
+    // Now you can store your values in a comma separated list
+    var arrayValues = array_values.join(",");
+
+</script>
+<script src='/js/map.js'></script>
+<script src='/js/mapjs.js'></script>
